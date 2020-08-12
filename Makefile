@@ -47,6 +47,7 @@ get-kubeconfig-task:
 		-t hashicorp/terraform:0.12.28 output kube_config > $(ROOT_DIR)/rook/kubeconf
 
 destroy-task:
+	rm -f $(ROOT_DIR)/rook/kubeconf
 	docker run --rm \
 		-e ARM_CLIENT_ID="${ARM_CLIENT_ID}" \
 		-e ARM_CLIENT_SECRET="${ARM_CLIENT_SECRET}" \
