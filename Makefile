@@ -7,7 +7,8 @@ plan: plan-task
 apply: apply-task
 get-kubeconf: get-kubeconfig-task
 destroy: destroy-task
-
+get-nodes: kube-get-nodes-task
+rook-setup: rook-common-task rook-operator-task rook-cluster-task
 
 gen-certs-task:
 	ssh-keygen -t rsa -b 4096 -f $(ROOT_DIR)/terraform/azure_rsa -N '' <<<y 2>&1 >/dev/null
@@ -56,3 +57,38 @@ destroy-task:
 		-v $(ROOT_DIR)/terraform:/terraform \
 		-w /terraform \
 		-t hashicorp/terraform:0.12.28 destroy -auto-approve -var="prefix=$(PREFIX)" /terraform
+
+kube-get-nodes-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 get nodes
+
+rook-common-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-common-1.4.yaml
+
+rook-operator-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-operator-1.4.yaml
+
+rook-cluster-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-cluster-1.4.yaml
+
+rook-toolbox-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-toolbox-1.4.yaml
