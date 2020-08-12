@@ -1,0 +1,7 @@
+/.idea/
+/terraform/.terraform/
+/terraform/azure_rsa
+/terraform/azure_rsa.pub
+/terraform/.terraform.tfstate.lock.info
+/terraform/terraform.tfstate
+/rook/kubeconf
