@@ -18,6 +18,12 @@ ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_
 make get-kubeconf
 ```
 
+#Add Rook
+
+```
+make get-nodes
+make rook-setup
+```
 
 # Resources
 
