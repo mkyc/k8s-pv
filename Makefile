@@ -1,5 +1,5 @@
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-
+PREFIX:=mkyc
 
 gen-certs: gen-certs-task
 init: init-task
@@ -17,7 +17,7 @@ init-task:
 		-e TF_LOG=TRACE \
 		-v $(ROOT_DIR)/terraform:/terraform \
 		-w /terraform \
-		-t hashicorp/terraform:0.12.28 init
+		-t hashicorp/terraform:0.12.28 init -var="prefix=$(PREFIX)"
 
 plan-task:
 	docker run --rm \
@@ -27,7 +27,7 @@ plan-task:
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
 		-v $(ROOT_DIR)/terraform:/terraform \
 		-w /terraform \
-		-t hashicorp/terraform:0.12.28 plan /terraform
+		-t hashicorp/terraform:0.12.28 plan -var="prefix=$(PREFIX)" /terraform
 
 apply-task:
 	docker run --rm \
@@ -37,7 +37,7 @@ apply-task:
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
 		-v $(ROOT_DIR)/terraform:/terraform \
 		-w /terraform \
-		-t hashicorp/terraform:0.12.28 apply -auto-approve
+		-t hashicorp/terraform:0.12.28 apply -auto-approve -var="prefix=$(PREFIX)" /terraform
 
 get-kubeconfig-task:
 	docker run --rm \
@@ -55,4 +55,4 @@ destroy-task:
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
 		-v $(ROOT_DIR)/terraform:/terraform \
 		-w /terraform \
-		-t hashicorp/terraform:0.12.28 destroy -auto-approve
+		-t hashicorp/terraform:0.12.28 destroy -auto-approve -var="prefix=$(PREFIX)" /terraform

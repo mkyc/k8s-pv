@@ -1,8 +1,7 @@
 existing_vnet_subnet_id = ""
 existing_resource_group_name = ""
-prefix = "mkyc"
 location = "North Central US"
-kubernetes_version = "1.17.7"
+kubernetes_version = "1.17.9"
 vnet_address_space = [
   "10.1.1.0/24"]
 aks_address_prefix = [

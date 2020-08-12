@@ -42,6 +42,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
       enabled = true
     }
   }
+
   auto_scaler_profile {
     balance_similar_node_groups = var.auto_scaler_profile.balance_similar_node_groups
     max_graceful_termination_sec = var.auto_scaler_profile.max_graceful_termination_sec
