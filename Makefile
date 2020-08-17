@@ -12,8 +12,10 @@ epi-nsr: epicli-add-nsr #run once not idempotent
 epi-disks: epicli-add-disks
 
 get-nodes: kube-get-nodes-task
-rook-setup: rook-common-task rook-operator-task rook-cluster-task
-rook-storage: rook-pool-task rook-storage-class-task
+rook-setup: rook-common-task rook-operator-task
+rook-cluster: rook-cluster-task
+rook-storage: rook-storage-class-task
+rook-test: rook-test-app-task
 
 
 define SP_BODY
@@ -263,16 +265,16 @@ rook-toolbox-task:
 		-w /rook \
 		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-toolbox-1.4.yaml --insecure-skip-tls-verify
 
-rook-pool-task:
-	docker run --rm \
-		-e KUBECONFIG=/rook/kubeconf \
-		-v $(ROOT_DIR)/rook:/rook \
-		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-pool-1.4.yaml --insecure-skip-tls-verify
-
 rook-storage-class-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
 		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-sc-1.4.yaml --insecure-skip-tls-verify
+
+rook-test-app-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-test-app.yaml --insecure-skip-tls-verify
