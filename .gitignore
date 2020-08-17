@@ -11,3 +11,4 @@
 /epiphany/azure/shared/build/
 /epiphany/azure/shared/.terraform/
 /epiphany/azure/shared/*.dump
+/rook/kubeconf.bckp

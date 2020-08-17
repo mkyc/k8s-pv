@@ -8,6 +8,7 @@ epi-init: epicli-init
 epi-apply: epicli-apply
 epi-delete: epicli-delete
 epi-get-kube: epicli-get-output-task epicli-get-kubeconf-task
+epi-nsr: epicli-add-nsr #run once not idempotent
 
 get-nodes: kube-get-nodes-task
 rook-setup: rook-common-task rook-operator-task rook-cluster-task
@@ -29,6 +30,23 @@ output "kube_config" {
 }
 endef
 export TF_OUTPUT
+
+define K8_NSR
+  security_rule {
+    name                        = "k8s-api"
+    description                 = "Allow access K8s API"
+    priority                    = 300
+    direction                   = "Inbound"
+    access                      = "Allow"
+    protocol                    = "Tcp"
+    source_port_range           = "*"
+    destination_port_range      = "6443"
+    source_address_prefix       = "0.0.0.0/0"
+    destination_address_prefix  = "0.0.0.0/0"
+  }
+}
+endef
+export K8_NSR
 
 gen-certs-task:
 	ssh-keygen -t rsa -b 4096 -f $(ROOT_DIR)/epiphany/azure/shared/azure_rsa -N '' <<<y 2>&1 >/dev/null
@@ -63,10 +81,31 @@ epicli-get-output-task:
 		-w /shared \
 		-t epiphanyplatform/epicli:0.7.1 -c "terraform output -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate -json kube_config > /shared/build/out.json"
 
+epicli-add-nsr:
+	docker run --rm \
+		-e ARM_CLIENT_ID="${ARM_CLIENT_ID}" \
+		-e ARM_CLIENT_SECRET="${ARM_CLIENT_SECRET}" \
+		-e ARM_SUBSCRIPTION_ID="${ARM_SUBSCRIPTION_ID}" \
+		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
+		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
+		-w /shared \
+		-t epiphanyplatform/epicli:0.7.1 -c "terraform refresh -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
+	sed -i.bckp '$$ d' $(ROOT_DIR)/epiphany/azure/shared/build/$(CLUSTER_NAME)/terraform/005_$(PREFIX)-$(CLUSTER_NAME)-kubernetes-master-nsg-0.tf
+	@echo "$$K8_NSR" >> $(ROOT_DIR)/epiphany/azure/shared/build/$(CLUSTER_NAME)/terraform/005_$(PREFIX)-$(CLUSTER_NAME)-kubernetes-master-nsg-0.tf
+	docker run --rm \
+		-e ARM_CLIENT_ID="${ARM_CLIENT_ID}" \
+		-e ARM_CLIENT_SECRET="${ARM_CLIENT_SECRET}" \
+		-e ARM_SUBSCRIPTION_ID="${ARM_SUBSCRIPTION_ID}" \
+		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
+		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
+		-w /shared \
+		-it epiphanyplatform/epicli:0.7.1 -c "terraform apply -auto-approve -target=azurerm_network_security_group.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-master-nsg-0 -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
+
 epicli-get-kubeconf-task:
 	$(eval MASTER_IP=$(shell sh -c "cat $(ROOT_DIR)/epiphany/azure/shared/build/out.json | docker run --rm -i imega/jq -cr .ip_address"))
 	ssh -oStrictHostKeyChecking=no -i $(ROOT_DIR)/epiphany/azure/shared/azure_rsa operations@$(MASTER_IP) "sudo cp /etc/kubernetes/admin.conf /home/operations/kconf && sudo chmod 644 /home/operations/kconf"
 	scp -oStrictHostKeyChecking=no -i $(ROOT_DIR)/epiphany/azure/shared/azure_rsa operations@$(MASTER_IP):/home/operations/kconf $(ROOT_DIR)/rook/kubeconf
+	sed  -i.bckp 's/.*server: https.*/    server: https:\/\/$(MASTER_IP):6443/g' $(ROOT_DIR)/rook/kubeconf
 
 
 epicli-delete:
@@ -125,32 +164,32 @@ kube-get-nodes-task:
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 get nodes
+		-t bitnami/kubectl:1.17.9 get nodes --insecure-skip-tls-verify
 
 rook-common-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-common-1.4.yaml
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-common-1.4.yaml --insecure-skip-tls-verify
 
 rook-operator-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-operator-1.4.yaml
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-operator-1.4.yaml --insecure-skip-tls-verify
 
 rook-cluster-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-cluster-1.4.yaml
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-cluster-1.4.yaml --insecure-skip-tls-verify
 
 rook-toolbox-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-toolbox-1.4.yaml
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-toolbox-1.4.yaml --insecure-skip-tls-verify
