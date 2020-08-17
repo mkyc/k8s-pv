@@ -13,6 +13,7 @@ epi-disks: epicli-add-disks
 
 get-nodes: kube-get-nodes-task
 rook-setup: rook-common-task rook-operator-task rook-cluster-task
+rook-storage: rook-pool-task rook-storage-class-task
 
 
 define SP_BODY
@@ -261,3 +262,17 @@ rook-toolbox-task:
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
 		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-toolbox-1.4.yaml --insecure-skip-tls-verify
+
+rook-pool-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-pool-1.4.yaml --insecure-skip-tls-verify
+
+rook-storage-class-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-sc-1.4.yaml --insecure-skip-tls-verify
