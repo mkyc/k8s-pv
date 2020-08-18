@@ -1,5 +1,9 @@
-# aks-rook-ceph
-test of Rook managed Ceph cluster setup on AKS
+# Overview
+Test of Rook managed Ceph cluster setup on AKS
+
+# Change prefix
+
+in ./Makefile change `PREFIX:=mkyc` to `PREFIX:=your-prefix` and in file ./epiphany/azure/shared/azurerhel07.yml change `  prefix: 'mkyc'` to `  prefix: 'your-prefix'`. 
 
 # Prepare service principal
 
