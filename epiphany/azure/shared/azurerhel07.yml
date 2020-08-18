@@ -1,0 +1,77 @@
+---
+kind: epiphany-cluster
+name: azurerhel07
+provider: azure
+specification:
+  admin_user:
+    key_path: /shared/azure_rsa
+    name: operations
+  cloud:
+    region: West Europe
+    subscription_name: PGGA-Epiphany-Dev
+    use_public_ips: true
+    use_service_principal: true
+  components:
+    kafka:
+      count: 0
+      machine: kafka-machine-rhel
+    kubernetes_master:
+      count: 1
+      machine: kubernetes-master-machine-rhel
+    kubernetes_node:
+      count: 3
+      machine: kubernetes-node-machine-rhel
+    load_balancer:
+      count: 0
+      machine: lb-machine-rhel
+    logging:
+      count: 0
+      machine: logging-machine-rhel
+    monitoring:
+      count: 0
+      machine: monitoring-machine-rhel
+    postgresql:
+      count: 0
+      machine: postgresql-machine-rhel
+    rabbitmq:
+      count: 0
+      machine: rabbitmq-machine-rhel
+    ignite:
+      count: 0
+      machine: ignite-machine-rhel
+    opendistro_for_elasticsearch:
+      count: 0
+      machine:  opendistro-machine-rhel
+  name: azurerhel07
+  prefix: 'mkyc'
+title: Epiphany cluster Config
+---
+kind: infrastructure/virtual-machine
+name: kubernetes-master-machine-rhel
+provider: azure
+based_on: kubernetes-master-machine
+specification:
+  storage_image_reference:
+    publisher: RedHat
+    offer: RHEL
+    sku: 7-RAW
+    version: "7.7.2019090418"
+---
+kind: infrastructure/virtual-machine
+name: kubernetes-node-machine-rhel
+provider: azure
+based_on: kubernetes-node-machine
+specification:
+  storage_image_reference:
+    publisher: RedHat
+    offer: RHEL
+    sku: 7-RAW
+    version: "7.7.2019090418"
+---
+kind: configuration/kubernetes-master
+name: default
+provider: azure
+specification:
+  advanced:
+    networking:
+      plugin: flannel
