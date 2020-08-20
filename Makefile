@@ -1,6 +1,7 @@
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 PREFIX:=mkyc
 CLUSTER_NAME:=azurerhel07
+CLUSTER_VERSION:=1.3
 
 epi-certs: gen-certs-task
 
@@ -16,6 +17,10 @@ rook-setup: rook-common-task rook-operator-task
 rook-cluster: rook-cluster-task
 rook-storage: rook-storage-class-task
 rook-test: rook-test-app-task
+
+rook-upgrade-privilages: rook-update-privileges-task
+rook-upgrade-operator: rook-update-operator-task
+
 
 
 define SP_BODY
@@ -242,39 +247,58 @@ rook-common-task:
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-common-1.4.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-$(CLUSTER_VERSION)/rook-common-$(CLUSTER_VERSION).yaml --insecure-skip-tls-verify
 
 rook-operator-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-operator-1.4.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-$(CLUSTER_VERSION)/rook-operator-$(CLUSTER_VERSION).yaml --insecure-skip-tls-verify
 
 rook-cluster-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-cluster-1.4.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-$(CLUSTER_VERSION)/rook-cluster-$(CLUSTER_VERSION).yaml --insecure-skip-tls-verify
 
 rook-toolbox-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-toolbox-1.4.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-$(CLUSTER_VERSION)/rook-toolbox-$(CLUSTER_VERSION).yaml --insecure-skip-tls-verify
 
 rook-storage-class-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-sc-1.4.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-$(CLUSTER_VERSION)/rook-sc-$(CLUSTER_VERSION).yaml --insecure-skip-tls-verify
 
 rook-test-app-task:
 	docker run --rm \
 		-e KUBECONFIG=/rook/kubeconf \
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
-		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-test-app.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-$(CLUSTER_VERSION)/rook-test-app-$(CLUSTER_VERSION).yaml --insecure-skip-tls-verify
+
+rook-update-privileges-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 delete -f /rook/rook-1.4/rook-upgrade-from-v1.3-delete.yaml --insecure-skip-tls-verify
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-1.4/rook-upgrade-from-v1.3-apply.yaml -f /rook/rook-1.4/rook-upgrade-from-v1.3-crds.yaml --insecure-skip-tls-verify
+
+rook-update-operator-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 -n rook-ceph set image deploy/rook-ceph-operator rook-ceph-operator=rook/ceph:v1.4.1 --insecure-skip-tls-verify

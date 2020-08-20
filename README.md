@@ -27,7 +27,11 @@ ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_
 ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_ID="id field" ARM_TENANT_ID="tenant field" make epi-disks
 ```
 
-TODO: I believe there is some manual kublet step required here. 
+# Change kubelet flag
+
+In case of Epiphany Cluster, it is necessary to change one flag in kubelet configuration on every worker node in order to enable the attach/detach capability for the kubelet service: 
+from: `enable-controller-attach-detach=false` to `enable-controller-attach-detach=true` 
+after that You have to restart kubelet service: `sudo systemctl restart kubelet`
 
 # Add Rook
 
@@ -37,6 +41,12 @@ make rook-setup #wait for operator initialization
 make rook-cluster
 make rook-storage
 make rook-test
+```
+# Upgrade Rook from 1.3 version to 1.4 version
+
+```
+make rook-upgrade-privilages
+make rook-upgrade-operator #wait for operator and cluster upgrade, may take up to 5 minutes
 ```
 
 # Resources
