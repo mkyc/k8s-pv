@@ -38,6 +38,12 @@ make rook-cluster
 make rook-storage
 make rook-test
 ```
+# Upgrade Rook from 1.3 version to 1.4 version
+
+```
+make rook-upgrade-privilages
+make rook-upgrade-operator #wait for operator and cluster upgrade, may take up to 5 minutes
+```
 
 # Resources
 
