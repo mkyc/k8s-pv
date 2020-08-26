@@ -30,7 +30,7 @@ ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_
 # Change kubelet flag
 
 In case of Epiphany Cluster, it is necessary to change one flag in kubelet configuration on every worker node in order to enable the attach/detach capability for the kubelet service: 
-from: `enable-controller-attach-detach=false` to `enable-controller-attach-detach=true` 
+from: `enable-controller-attach-detach=false` to `enable-controller-attach-detach=true` in the following file: `/var/lib/kubelet/kubeadm-flags.env`
 after that You have to restart kubelet service: `sudo systemctl restart kubelet`
 
 # Add Rook
