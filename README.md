@@ -51,7 +51,8 @@ Create toolbox pod with rbd tools installed:
 make rook-toolbox-task
 ```
 
-SSH to kubernetes master node
+SSH to kubernetes master node or use `make epi-get-kube` to get k8s config file in `./rook/kubeconf`
+
 
 Create a file in PVC mounted location in app wordpress:
 
@@ -79,7 +80,7 @@ Remove previously created file before snapshot
 kubectl exec -it $(kubectl get pod -l "app=wordpress" -o jsonpath='{.items[0].metadata.name}') -- rm /var/www/html/test1 
 ```
 
-Stop application
+Scale down application
 ```
 kubectl scale --replicas=0 deployment/wordpress
 ```
@@ -94,7 +95,7 @@ Expected result:
 Rolling back to snapshot: 100% complete...done.
 ```
 
-Start application
+Scale up application
 ```
 kubectl scale --replicas=1 deployment/wordpress
 ```
