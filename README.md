@@ -20,7 +20,7 @@ az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/SUBSCRIPT
 
 ```
 make epi-certs
-NAME="name field" DISPLAY_NAME="displayName field" make epi-init
+ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_ID="id field" ARM_TENANT_ID="tenant field" NAME="name field" DISPLAY_NAME="displayName field" make epi-init
 ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_ID="id field" ARM_TENANT_ID="tenant field" make epi-apply
 ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_ID="id field" ARM_TENANT_ID="tenant field" make epi-get-kube
 ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_ID="id field" ARM_TENANT_ID="tenant field" make epi-nsr #run this only once!
