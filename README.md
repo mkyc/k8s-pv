@@ -42,6 +42,69 @@ make rook-cluster
 make rook-storage
 make rook-test
 ```
+
+# Backup / Restore
+
+Create toolbox pod with rbd tools installed:
+
+```
+make rook-toolbox-task
+```
+
+SSH to kubernetes master node
+
+Create a file in PVC mounted location in app wordpress:
+
+```
+kubectl exec -it $(kubectl get pod -l "app=wordpress" -o jsonpath='{.items[0].metadata.name}') -- touch /var/www/html/test1 
+```
+
+Get poolname
+```
+kubectl -n rook-ceph exec -it $(kubectl -n rook-ceph  get pod -l "app=rook-ceph-tools" -o jsonpath='{.items[0].metadata.name}') -- rados lspools
+```
+
+Get volume name 
+```
+kubectl -n rook-ceph exec -it $(kubectl -n rook-ceph  get pod -l "app=rook-ceph-tools" -o jsonpath='{.items[0].metadata.name}') -- rbd ls replicapool
+```
+
+Create snapshot 
+```
+kubectl -n rook-ceph exec -it $(kubectl -n rook-ceph  get pod -l "app=rook-ceph-tools" -o jsonpath='{.items[0].metadata.name}') -- rbd snap create replicapool/csi-vol-365399b7-e79e-11ea-a8cc-66630cbb1481@test1-snapshot
+```
+
+Remove previously created file before snapshot
+```
+kubectl exec -it $(kubectl get pod -l "app=wordpress" -o jsonpath='{.items[0].metadata.name}') -- rm /var/www/html/test1 
+```
+
+Stop application
+```
+kubectl scale --replicas=0 deployment/wordpress
+```
+
+Rollback from snapshot 
+```
+kubectl -n rook-ceph exec -it $(kubectl -n rook-ceph  get pod -l "app=rook-ceph-tools" -o jsonpath='{.items[0].metadata.name}') -- rbd snap rollback replicapool/csi-vol-365399b7-e79e-11ea-a8cc-66630cbb1481@test1-snapshot
+```
+Expected result:
+```
+1ea-a8cc-66630cbb1481@test1-snapshot
+Rolling back to snapshot: 100% complete...done.
+```
+
+Start application
+```
+kubectl scale --replicas=1 deployment/wordpress
+```
+
+Check if the file is present again
+```
+kubectl exec -it $(kubectl get pod -l "app=wordpress" -o jsonpath='{.items[0].metadata.name}') -- ls /var/www/html/test1 
+```
+
+
 # Upgrade Rook from 1.3 version to 1.4 version
 
 ```
