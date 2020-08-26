@@ -25,8 +25,8 @@ rook-upgrade-operator: rook-update-operator-task
 
 define SP_BODY
 appId: ${ARM_CLIENT_ID}
-displayName: $(PREFIX)-$(CLUSTER_NAME)-rg
-name: http://$(PREFIX)-$(CLUSTER_NAME)-rg
+displayName: ${DISPLAY_NAME}
+name: ${NAME}
 password: ${ARM_CLIENT_SECRET}
 tenant: ${ARM_TENANT_ID}
 subscriptionId: ${ARM_SUBSCRIPTION_ID}

@@ -13,14 +13,14 @@ Have a look [here](https://www.terraform.io/docs/providers/azurerm/guides/servic
 az login 
 az account list #get subscription from id field
 az account set --subscription="SUBSCRIPTION_ID"
-az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/SUBSCRIPTION_ID" #get appID, password and tenant
+az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/SUBSCRIPTION_ID" #get appID, password, tenant, name and displayName
 ```
 
 # Run terraform
 
 ```
 make epi-certs
-make epi-init
+ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_ID="id field" ARM_TENANT_ID="tenant field" NAME="name field" DISPLAY_NAME="displayName field" make epi-init
 ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_ID="id field" ARM_TENANT_ID="tenant field" make epi-apply
 ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_ID="id field" ARM_TENANT_ID="tenant field" make epi-get-kube
 ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_ID="id field" ARM_TENANT_ID="tenant field" make epi-nsr #run this only once!
@@ -30,7 +30,7 @@ ARM_CLIENT_ID="appId field" ARM_CLIENT_SECRET="password field" ARM_SUBSCRIPTION_
 # Change kubelet flag
 
 In case of Epiphany Cluster, it is necessary to change one flag in kubelet configuration on every worker node in order to enable the attach/detach capability for the kubelet service: 
-from: `enable-controller-attach-detach=false` to `enable-controller-attach-detach=true` 
+from: `enable-controller-attach-detach=false` to `enable-controller-attach-detach=true` in the following file: `/var/lib/kubelet/kubeadm-flags.env`
 after that You have to restart kubelet service: `sudo systemctl restart kubelet`
 
 # Add Rook
