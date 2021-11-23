@@ -1,0 +1,68 @@
+kind: epiphany-cluster
+title: Epiphany cluster Config
+provider: azure
+name: rook
+specification:
+  prefix: mkyc1123
+  name: rook
+  admin_user:
+    name: operations
+    key_path: /shared/azure_rsa
+  cloud:
+    subscription_name: PGGA-Epiphany-Dev
+    use_public_ips: true
+    use_service_principal: true
+    region: West Europe
+  components:
+    kubernetes_master:
+      count: 1
+      machine: kubernetes-master-machine
+    kubernetes_node:
+      count: 3
+      machine: kubernetes-node-machine
+    logging:
+      count: 0
+      machine: logging-machine
+    monitoring:
+      count: 0
+      machine: monitoring-machine
+    kafka:
+      count: 0
+      machine: kafka-machine
+    postgresql:
+      count: 0
+      machine: postgresql-machine
+    load_balancer:
+      count: 0
+      machine: load-balancer-machine
+    rabbitmq:
+      count: 0
+      machine: rabbitmq-machine
+    ignite:
+      count: 0
+      machine: ignite-machine
+    opendistro_for_elasticsearch:
+      count: 0
+      machine: logging-machine
+    repository:
+      count: 1
+      machine: repository-machine
+    single_machine:
+      count: 0
+      machine: single-machine
+version: 1.2.0
+#---
+#kind: infrastructure/virtual-machine
+#title: Virtual Machine Infra
+#provider: azure
+#name: default
+#specification:
+#  tags: []
+#  os_type: linux
+#  size: Standard_DS1_v2
+#  storage_image_reference:
+#    publisher: OpenLogic
+#    offer: CentOS
+#    sku: "7_9"
+#    version: "7.9.2021071900"
+#version: 1.2.0

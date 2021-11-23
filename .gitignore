@@ -12,3 +12,4 @@
 /epiphany/azure/shared/.terraform/
 /epiphany/azure/shared/*.dump
 /rook/kubeconf.bckp
+/service-principal.mk
