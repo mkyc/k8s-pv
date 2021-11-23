@@ -51,18 +51,3 @@ specification:
       count: 0
       machine: single-machine
 version: 1.2.0
-#---
-#kind: infrastructure/virtual-machine
-#title: Virtual Machine Infra
-#provider: azure
-#name: default
-#specification:
-#  tags: []
-#  os_type: linux
-#  size: Standard_DS1_v2
-#  storage_image_reference:
-#    publisher: OpenLogic
-#    offer: CentOS
-#    sku: "7_9"
-#    version: "7.9.2021071900"
-#version: 1.2.0
