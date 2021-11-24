@@ -1,27 +1,38 @@
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-PREFIX:=mkyc
-CLUSTER_NAME:=azurerhel07
-CLUSTER_VERSION:=1.3
+PREFIX:=mkyc1123
+CLUSTER_NAME:=rook
+CLUSTER_VERSION:=1.7
 
+-include ./service-principal.mk
+export
+
+# setup begin
 epi-certs: gen-certs-task
 
 epi-init: epicli-init
 epi-apply: epicli-apply
-epi-delete: epicli-delete
 epi-get-kube: epicli-get-output-task epicli-get-kubeconf-task
-epi-nsr: epicli-add-nsr #run once not idempotent
+epi-nsr: epicli-add-nsr # run once not idempotent
 epi-disks: epicli-add-disks
+update-kubelet: update-kubelet-task
 
-get-nodes: kube-get-nodes-task
-rook-setup: rook-common-task rook-operator-task
-rook-cluster: rook-cluster-task
+rook-setup: rook-crds-task rook-common-task rook-operator-task
+rook-cluster: rook-cluster-task # wait until it initializes
 rook-storage: rook-storage-class-task
 rook-test: rook-test-app-task
+# setup end
 
+
+# update begin (not implemeneted for 1.7)
 rook-upgrade-privilages: rook-update-privileges-task
 rook-upgrade-operator: rook-update-operator-task
+# update end
 
-
+# tools begin
+epi-delete: epicli-delete
+get-nodes: kube-get-nodes-task
+epi-nuke: destroy-task
+# tools end
 
 define SP_BODY
 appId: ${ARM_CLIENT_ID}
@@ -113,6 +124,29 @@ resource "azurerm_subnet_network_security_group_association" "nsg-association" {
 endef
 export DATA_DISKS
 
+define FIX_KUBELET
+---
+- name: Update kubelet
+  hosts: kubernetes_node
+  become: true
+  become_method: sudo
+
+  tasks:
+    - name: fix config file
+      ansible.builtin.lineinfile:
+        path: /var/lib/kubelet/kubeadm-flags.env
+        regexp: '^KUBELET_KUBEADM_ARGS='
+        line: KUBELET_KUBEADM_ARGS="--cgroup-driver=systemd --enable-controller-attach-detach=true --network-plugin=cni --node-labels=node-type=epiphany --pod-infra-container-image=${PREFIX}-${CLUSTER_NAME}-repository-vm-0:5000/k8s.gcr.io/pause:3.2 --resolv-conf=/run/systemd/resolve/resolv.conf"
+
+    - name: Restart kubelet
+      ansible.builtin.systemd:
+        state: restarted
+        daemon_reload: yes
+        name: kubelet
+
+endef
+export FIX_KUBELET
+
 gen-certs-task:
 	ssh-keygen -t rsa -b 4096 -f $(ROOT_DIR)/epiphany/azure/shared/azure_rsa -N '' <<<y 2>&1 >/dev/null
 
@@ -123,9 +157,15 @@ epicli-init:
 epicli-apply:
 	docker run --rm \
 		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
-		-it epiphanyplatform/epicli:0.7.1 \
+		-it epiphanyplatform/epicli:1.2.0 \
 		-c "epicli --auto-approve apply --vault-password 123 -f /shared/$(CLUSTER_NAME).yml"
 
+update-kubelet-task:
+	@echo "$$FIX_KUBELET" > $(ROOT_DIR)/epiphany/azure/shared/build/$(CLUSTER_NAME)/modify-kubelet.yml
+	docker run --rm \
+		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
+		-it epiphanyplatform/epicli:1.2.0 \
+		-c "ansible-playbook -i /shared/build/$(CLUSTER_NAME)/inventory /shared/build/$(CLUSTER_NAME)/modify-kubelet.yml"
 
 epicli-get-output-task:
 	@echo "$$TF_OUTPUT" > $(ROOT_DIR)/epiphany/azure/shared/build/$(CLUSTER_NAME)/terraform/output.tf
@@ -136,7 +176,7 @@ epicli-get-output-task:
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
 		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
 		-w /shared \
-		-t epiphanyplatform/epicli:0.7.1 -c "terraform refresh -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
+		-t epiphanyplatform/epicli:1.2.0 -c "terraform refresh -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
 	docker run --rm \
 		-e ARM_CLIENT_ID="${ARM_CLIENT_ID}" \
 		-e ARM_CLIENT_SECRET="${ARM_CLIENT_SECRET}" \
@@ -144,7 +184,7 @@ epicli-get-output-task:
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
 		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
 		-w /shared \
-		-t epiphanyplatform/epicli:0.7.1 -c "terraform output -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate -json kube_config > /shared/build/out.json"
+		-t epiphanyplatform/epicli:1.2.0 -c "terraform output -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate -json kube_config > /shared/build/out.json"
 
 epicli-add-nsr:
 	docker run --rm \
@@ -154,7 +194,7 @@ epicli-add-nsr:
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
 		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
 		-w /shared \
-		-t epiphanyplatform/epicli:0.7.1 -c "terraform refresh -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
+		-t epiphanyplatform/epicli:1.2.0 -c "terraform refresh -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
 	sed -i.bckp '$$ d' $(ROOT_DIR)/epiphany/azure/shared/build/$(CLUSTER_NAME)/terraform/005_$(PREFIX)-$(CLUSTER_NAME)-kubernetes-master-nsg-0.tf
 	@echo "$$K8_NSR" >> $(ROOT_DIR)/epiphany/azure/shared/build/$(CLUSTER_NAME)/terraform/005_$(PREFIX)-$(CLUSTER_NAME)-kubernetes-master-nsg-0.tf
 	docker run --rm \
@@ -164,7 +204,7 @@ epicli-add-nsr:
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
 		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
 		-w /shared \
-		-it epiphanyplatform/epicli:0.7.1 -c "terraform apply -auto-approve -target=azurerm_network_security_group.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-master-nsg-0 -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
+		-it epiphanyplatform/epicli:1.2.0 -c "terraform apply -auto-approve -target=azurerm_network_security_group.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-master-nsg-0 -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
 
 epicli-add-disks:
 	@echo "$$DATA_DISKS" > $(ROOT_DIR)/epiphany/azure/shared/build/$(CLUSTER_NAME)/terraform/disks.tf
@@ -175,7 +215,7 @@ epicli-add-disks:
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
 		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
 		-w /shared \
-		-it epiphanyplatform/epicli:0.7.1 -c "terraform apply -auto-approve -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-data-disk -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-data-disk -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-data-disk-attachment -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-data-disk-attachment -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-attachment -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
+		-it epiphanyplatform/epicli:1.2.0 -c "terraform apply -auto-approve -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-data-disk -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-data-disk -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-data-disk-attachment -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-data-disk-attachment -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-attachment -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
 
 epicli-get-kubeconf-task:
 	$(eval MASTER_IP=$(shell sh -c "cat $(ROOT_DIR)/epiphany/azure/shared/build/out.json | docker run --rm -i imega/jq -cr .ip_address"))
@@ -187,7 +227,7 @@ epicli-get-kubeconf-task:
 epicli-delete:
 	docker run --rm \
 		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
-		-it epiphanyplatform/epicli:0.7.1 \
+		-it epiphanyplatform/epicli:1.2.0 \
 		-c "epicli --auto-approve delete -b /shared/build/$(CLUSTER_NAME)"
 
 init-task:
@@ -231,9 +271,9 @@ destroy-task:
 		-e ARM_CLIENT_SECRET="${ARM_CLIENT_SECRET}" \
 		-e ARM_SUBSCRIPTION_ID="${ARM_SUBSCRIPTION_ID}" \
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
-		-v $(ROOT_DIR)/terraform:/terraform \
-		-w /terraform \
-		-t hashicorp/terraform:0.12.28 destroy -auto-approve -var="prefix=$(PREFIX)" /terraform
+		-v $(ROOT_DIR)/epiphany/azure/shared:/shared \
+		-w /shared \
+		-t epiphanyplatform/epicli:1.2.0 -c "terraform destroy -auto-approve -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
 
 kube-get-nodes-task:
 	docker run --rm \
@@ -241,6 +281,13 @@ kube-get-nodes-task:
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
 		-t bitnami/kubectl:1.17.9 get nodes --insecure-skip-tls-verify
+
+rook-crds-task:
+	docker run --rm \
+		-e KUBECONFIG=/rook/kubeconf \
+		-v $(ROOT_DIR)/rook:/rook \
+		-w /rook \
+		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-$(CLUSTER_VERSION)/rook-crds-$(CLUSTER_VERSION).yaml --insecure-skip-tls-verify
 
 rook-common-task:
 	docker run --rm \
