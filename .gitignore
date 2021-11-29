@@ -13,3 +13,4 @@
 /epiphany/azure/shared/*.dump
 /rook/kubeconf.bckp
 /service-principal.mk
+/tests/kubeconf

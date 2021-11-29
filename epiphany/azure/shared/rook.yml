@@ -3,7 +3,7 @@ title: Epiphany cluster Config
 provider: azure
 name: rook
 specification:
-  prefix: mkyc1123
+  prefix: mkyc1126
   name: rook
   admin_user:
     name: operations
@@ -16,10 +16,10 @@ specification:
   components:
     kubernetes_master:
       count: 1
-      machine: kubernetes-master-machine
+      machine: default
     kubernetes_node:
       count: 3
-      machine: kubernetes-node-machine
+      machine: default
     logging:
       count: 0
       machine: logging-machine
@@ -46,8 +46,17 @@ specification:
       machine: logging-machine
     repository:
       count: 1
-      machine: repository-machine
+      machine: default
     single_machine:
       count: 0
       machine: single-machine
+version: 1.2.0
+---
+kind: infrastructure/virtual-machine
+title: Virtual Machine Infra
+provider: azure
+name: default
+specification:
+  os_type: linux
+  size: Standard_D8s_v3
 version: 1.2.0
