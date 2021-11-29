@@ -1,7 +1,8 @@
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-PREFIX:=mkyc1123
+PREFIX:=mkyc1126
 CLUSTER_NAME:=rook
 CLUSTER_VERSION:=1.7
+ADDITIONAL_DISK_SIZE = 520
 
 -include ./service-principal.mk
 export
@@ -19,9 +20,7 @@ update-kubelet: update-kubelet-task
 rook-setup: rook-crds-task rook-common-task rook-operator-task
 rook-cluster: rook-cluster-task # wait until it initializes
 rook-storage: rook-storage-class-task
-rook-test: rook-test-app-task
 # setup end
-
 
 # update begin (not implemeneted for 1.7)
 rook-upgrade-privilages: rook-update-privileges-task
@@ -33,6 +32,11 @@ epi-delete: epicli-delete
 get-nodes: kube-get-nodes-task
 epi-nuke: destroy-task
 # tools end
+
+# tests begin
+rook-test: rook-test-app-task
+rook-performance: rook-performance-test-task
+# tests end
 
 define SP_BODY
 appId: ${ARM_CLIENT_ID}
@@ -75,7 +79,7 @@ resource "azurerm_managed_disk" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-
   resource_group_name  = azurerm_resource_group.rg.name
   storage_account_type = "Premium_LRS"
   create_option        = "Empty"
-  disk_size_gb         = 10
+  disk_size_gb         = ${ADDITIONAL_DISK_SIZE}
 }
 
 resource "azurerm_managed_disk" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-data-disk" {
@@ -84,7 +88,7 @@ resource "azurerm_managed_disk" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-
   resource_group_name  = azurerm_resource_group.rg.name
   storage_account_type = "Premium_LRS"
   create_option        = "Empty"
-  disk_size_gb         = 10
+  disk_size_gb         = ${ADDITIONAL_DISK_SIZE}
 }
 
 resource "azurerm_managed_disk" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk" {
@@ -93,7 +97,7 @@ resource "azurerm_managed_disk" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-
   resource_group_name  = azurerm_resource_group.rg.name
   storage_account_type = "Premium_LRS"
   create_option        = "Empty"
-  disk_size_gb         = 10
+  disk_size_gb         = ${ADDITIONAL_DISK_SIZE}
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-data-disk-attachment" {
@@ -330,6 +334,14 @@ rook-test-app-task:
 		-v $(ROOT_DIR)/rook:/rook \
 		-w /rook \
 		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-$(CLUSTER_VERSION)/rook-test-app-$(CLUSTER_VERSION).yaml --insecure-skip-tls-verify
+
+rook-performance-test-task:
+	cp $(ROOT_DIR)/rook/kubeconf $(ROOT_DIR)/tests/kubeconf
+	docker run --rm \
+		-e KUBECONFIG=/tests/kubeconf \
+		-v $(ROOT_DIR)/tests:/tests \
+		-w /tests \
+		-t bitnami/kubectl:1.17.9 apply -f /tests/performance/kbench.yaml --insecure-skip-tls-verify
 
 rook-update-privileges-task:
 	docker run --rm \
