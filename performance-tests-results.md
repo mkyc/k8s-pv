@@ -1,6 +1,6 @@
 # Rook
 
-## Cluster of 3 Standard_D2s_v2 machines having 10G data disks 
+## Cluster of 3 Standard_D2s_v3 machines having 10G data disks 
 
 ```
 TEST_FILE: /volume/test
@@ -32,7 +32,9 @@ Latency in ns (Read/Write)
   CPU Idleness:                      48%
 ```
 
-## Cluster of 3 Standard_D2s_v2 machines having 520G data disks
+## Cluster of 3 Standard_D2s_v3 machines having 520G data disks
+
+### run 1
 
 ```
 TEST_FILE: /volume/test
@@ -63,6 +65,39 @@ Latency in ns (Read/Write)
     Sequential:   2,396,627 / 18,736,267
   CPU Idleness:                      61%
 ```
+
+### run 2
+
+```
+TEST_FILE: /volume/test
+TEST_OUTPUT_PREFIX: test_device
+TEST_SIZE: 2G
+Benchmarking iops.fio into test_device-iops.json
+Benchmarking bandwidth.fio into test_device-bandwidth.json
+Benchmarking latency.fio into test_device-latency.json
+
+=====================
+FIO Benchmark Summary
+For: test_device
+SIZE: 2G
+QUICK MODE: DISABLED
+=====================
+IOPS (Read/Write)
+        Random:              3,752 / 945
+    Sequential:            2,003 / 1,028
+  CPU Idleness:                      36%
+
+Bandwidth in KiB/sec (Read/Write)
+        Random:         243,478 / 50,182
+    Sequential:         194,908 / 48,013
+  CPU Idleness:                      36%
+
+Latency in ns (Read/Write)
+        Random:   3,286,926 / 23,785,866
+    Sequential:   3,565,337 / 23,334,738
+  CPU Idleness:                      58%
+```
+
 
 ## Cluster of 3 Standard_D8s_v3 machines having 520G data disks
 
