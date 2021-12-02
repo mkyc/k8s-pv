@@ -14,3 +14,4 @@
 /rook/kubeconf.bckp
 /service-principal.mk
 /tests/kubeconf
+/run/
