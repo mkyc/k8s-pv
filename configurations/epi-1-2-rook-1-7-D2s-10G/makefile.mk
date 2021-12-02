@@ -1,6 +1,6 @@
-CLUSTER_NAME:=rook
-SUBSCRIBTION_NAME:=PGGA-Epiphany-Dev
-ADDITIONAL_DISK_SIZE = 520
+CLUSTER_NAME = rook
+ADDITIONAL_DISK_SIZE = 10
+MACHINE_SIZE = Standard_D2s_v2
 
 
 define CLUSTER_CONFIG
@@ -15,7 +15,7 @@ specification:
     name: operations
     key_path: /shared/azure_rsa
   cloud:
-    subscription_name: ${SUBSCRIBTION_NAME}
+    subscription_name: ${SUBSCRIPTION_NAME}
     use_public_ips: true
     use_service_principal: true
     region: West Europe
@@ -64,7 +64,7 @@ provider: azure
 name: default
 specification:
   os_type: linux
-  size: Standard_D8s_v3
+  size: ${MACHINE_SIZE}
 version: 1.2.0
 
 endef
@@ -250,10 +250,59 @@ sub-apply2:
 		-it epiphanyplatform/epicli:1.2.0 \
 		-c "ansible-playbook -i /shared/build/$(CLUSTER_NAME)/inventory /shared/build/$(CLUSTER_NAME)/modify-kubelet.yml"
 
-sub-pl:
+sub-persistence:
 	cp $(ROOT_DIR)/configurations/epi-1-2-rook-1-7-D2s-10G/rook-*.yaml $(ROOT_DIR)/run/shared/
 	docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
-		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-crds.yaml -f /shared/rook-common.yaml -f /shared/rook-operator.yaml -f /shared/rook-cluster.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-crds.yaml --insecure-skip-tls-verify
+	sleep 5
+	docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-common.yaml --insecure-skip-tls-verify
+	sleep 5
+	docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-operator.yaml --insecure-skip-tls-verify
+	sleep 5
+	docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-cluster.yaml --insecure-skip-tls-verify
+	sleep 5
+	docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-sc.yaml --insecure-skip-tls-verify
+	sleep 5
+	docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-test-app.yaml --insecure-skip-tls-verify
+
+sub-performance:
+	cp $(ROOT_DIR)/configurations/epi-1-2-rook-1-7-D2s-10G/kbench.yaml $(ROOT_DIR)/run/shared/
+	docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 apply -f /shared/kbench.yaml --insecure-skip-tls-verify
+
+sub-nuke:
+	docker run --rm \
+		-e ARM_CLIENT_ID="${ARM_CLIENT_ID}" \
+		-e ARM_CLIENT_SECRET="${ARM_CLIENT_SECRET}" \
+		-e ARM_SUBSCRIPTION_ID="${ARM_SUBSCRIPTION_ID}" \
+		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t epiphanyplatform/epicli:1.2.0 -c "terraform destroy -auto-approve -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
+	rm -rf $(ROOT_DIR)/run
