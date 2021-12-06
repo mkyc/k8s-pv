@@ -1,12 +1,13 @@
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-PREFIX:=mkyc1202
+PREFIX:=mkyc1206
 SUBSCRIPTION_NAME = PGGA-Epiphany-Dev
 
 -include ./service-principal.mk
 export
 
 #CONFIGURATION:=epi-1-2-rook-1-7-D2s-10G
-CONFIGURATION:=epi-1-2-rook-1-7-D2s-520G
+#CONFIGURATION:=epi-1-2-rook-1-7-D2s-520G
+CONFIGURATION:=epi-1-2-rook-1-7-D8s-520G
 
 -include ./configurations/$(CONFIGURATION)/makefile.mk
 export
@@ -18,12 +19,7 @@ apply2: sub-apply2
 persistence: sub-persistence
 # wait some time to cluster to stabilize before running tests (at least 10 minutes, but longer is better)
 performance: sub-performance
+# collect results with `kubectl logs -l kbench=fio -f`
+
 # run following to remove previously created cluster
 nuke: sub-nuke
-
-#rook-toolbox-task:
-#	docker run --rm \
-#		-e KUBECONFIG=/rook/kubeconf \
-#		-v $(ROOT_DIR)/rook:/rook \
-#		-w /rook \
-#		-t bitnami/kubectl:1.17.9 apply -f /rook/rook-$(CLUSTER_VERSION)/rook-toolbox-$(CLUSTER_VERSION).yaml --insecure-skip-tls-verify

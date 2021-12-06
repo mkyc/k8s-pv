@@ -295,6 +295,11 @@ sub-performance:
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
 		-t bitnami/kubectl:1.17.9 delete job kbench --insecure-skip-tls-verify
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete pvc kbench-pvc --insecure-skip-tls-verify
 	docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \

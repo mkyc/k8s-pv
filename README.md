@@ -23,6 +23,8 @@ az account set --subscription="SUBSCRIPTION_ID"
 az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/SUBSCRIPTION_ID" #get appID, password, tenant, name and displayName
 ```
 
+Prepare file [service-principal.mk as presented in service-principal.mk.template](./service-principal.mk.template).
+
 # REVIEW Backup / Restore
 
 Create toolbox pod with rbd tools installed:
