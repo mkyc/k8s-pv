@@ -1,0 +1,13 @@
+ARM_CLIENT_ID=<app id from principal>
+ARM_CLIENT_SECRET=<principal secret>
+ARM_SUBSCRIPTION_ID=<azure subscription id>
+ARM_TENANT_ID=<azure tenant id>
+DISPLAY_NAME=<principal name>
+NAME=<principal id>
+PREFIX=<prefix you want to have for your RG ( ^[a-z0-9]{2,8}$ )>
+SUBSCRIPTION_NAME=<actual name of your subscription>
+
+#CONFIGURATION:=epi-1-2-rook-1-7-D2s-10G
+#CONFIGURATION:=epi-1-2-rook-1-7-D2s-520G
+#CONFIGURATION:=epi-1-2-rook-1-7-D8s-520G
+CONFIGURATION:=epi-1-2-openebs-3-0-D8s-520G
