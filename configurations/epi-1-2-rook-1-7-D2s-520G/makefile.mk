@@ -290,6 +290,11 @@ sub-persistence:
 
 sub-performance:
 	cp $(ROOT_DIR)/configurations/epi-1-2-rook-1-7-D2s-10G/kbench.yaml $(ROOT_DIR)/run/shared/
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete job kbench --insecure-skip-tls-verify
 	docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \
