@@ -284,7 +284,7 @@ sub-apply2:
 		-e ARM_TENANT_ID="${ARM_TENANT_ID}" \
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
-		-it epiphanyplatform/epicli:1.2.0 -c "terraform apply -auto-approve -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-data-disk -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-data-disk -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-data-disk-attachment -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-data-disk-attachment -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-attachment -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
+		-it epiphanyplatform/epicli:1.2.0 -c "terraform apply -auto-approve -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
 	echo "$$FIX_KUBELET" > $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/modify-kubelet.yml
 	docker run --rm \
 		-v $(ROOT_DIR)/run/shared:/shared \
