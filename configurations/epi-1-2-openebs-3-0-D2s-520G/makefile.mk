@@ -1,5 +1,5 @@
-CLUSTER_NAME = rook
-ADDITIONAL_DISK_SIZE = 10
+CLUSTER_NAME = openebs
+ADDITIONAL_DISK_SIZE = 520
 MACHINE_SIZE = Standard_D2s_v3
 
 
@@ -160,7 +160,7 @@ resource "azurerm_subnet_network_security_group_association" "nsg-association" {
 endef
 export DATA_DISKS
 
-define FIX_KUBELET
+define ADD_ISCSI
 ---
 - name: Update kubelet
   hosts: kubernetes_node
@@ -168,20 +168,33 @@ define FIX_KUBELET
   become_method: sudo
 
   tasks:
-    - name: fix config file
-      ansible.builtin.lineinfile:
-        path: /var/lib/kubelet/kubeadm-flags.env
-        regexp: '^KUBELET_KUBEADM_ARGS='
-        line: KUBELET_KUBEADM_ARGS="--cgroup-driver=systemd --enable-controller-attach-detach=true --network-plugin=cni --node-labels=node-type=epiphany --pod-infra-container-image=${PREFIX}-${CLUSTER_NAME}-repository-vm-0:5000/k8s.gcr.io/pause:3.2 --resolv-conf=/run/systemd/resolve/resolv.conf"
-
-    - name: Restart kubelet
+    - name: Update repositories cache and install open-iscsi package
+      ansible.builtin.apt:
+        name: open-iscsi
+        update_cache: yes
+    - name: Enable iscsid
       ansible.builtin.systemd:
-        state: restarted
+        state: started
+        enabled: yes
+        name: iscsid
+    - name: Make sure a iscsid is running
+      ansible.builtin.systemd:
+        state: started
         daemon_reload: yes
-        name: kubelet
+        name: iscsid
+    - name: Create a ext4 filesystem on /dev/sdc and check disk blocks
+      community.general.filesystem:
+        fstype: ext4
+        dev: /dev/sdc
+    - name: Mount up device
+      ansible.posix.mount:
+        path: /opt/openebs
+        src: /dev/sdc
+        fstype: ext4
+        state: mounted
 
 endef
-export FIX_KUBELET
+export ADD_ISCSI
 
 sub-init:
 	mkdir -p $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/terraform
@@ -244,49 +257,43 @@ sub-apply2:
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
 		-it epiphanyplatform/epicli:1.2.0 -c "terraform apply -auto-approve -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-data-disk -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-data-disk -target=azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-0-data-disk-attachment -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-1-data-disk-attachment -target=azurerm_virtual_machine_data_disk_attachment.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-attachment -state=/shared/build/$(CLUSTER_NAME)/terraform/terraform.tfstate /shared/build/$(CLUSTER_NAME)/terraform/"
-	echo "$$FIX_KUBELET" > $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/modify-kubelet.yml
+	echo "$$ADD_ISCSI" > $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/add-iscsi.yml
 	docker run --rm \
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-it epiphanyplatform/epicli:1.2.0 \
-		-c "ansible-playbook -i /shared/build/$(CLUSTER_NAME)/inventory /shared/build/$(CLUSTER_NAME)/modify-kubelet.yml"
+		-c "ansible-playbook -i /shared/build/$(CLUSTER_NAME)/inventory /shared/build/$(CLUSTER_NAME)/add-iscsi.yml"
 
 sub-persistence:
-	cp $(ROOT_DIR)/configurations/$(CONFIGURATION)/rook-*.yaml $(ROOT_DIR)/run/shared/
+	cp $(ROOT_DIR)/configurations/$(CONFIGURATION)/openebs-*.yaml $(ROOT_DIR)/run/shared/
 	docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
-		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-crds.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /shared/openebs-operator.yaml --insecure-skip-tls-verify
 	sleep 5
 	docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
-		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-common.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /shared/openebs-jiva-operator.yaml --insecure-skip-tls-verify
 	sleep 5
 	docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
-		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-operator.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /shared/openebs-jvp.yaml --insecure-skip-tls-verify
 	sleep 5
 	docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
-		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-cluster.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /shared/openebs-sc.yaml --insecure-skip-tls-verify
 	sleep 5
 	docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
-		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-sc.yaml --insecure-skip-tls-verify
-	sleep 5
-	docker run --rm \
-		-e KUBECONFIG=/shared/kubeconf \
-		-v $(ROOT_DIR)/run/shared:/shared \
-		-w /shared \
-		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-test-app.yaml --insecure-skip-tls-verify
+		-t bitnami/kubectl:1.17.9 apply -f /shared/openebs-test-app.yaml --insecure-skip-tls-verify
 
 sub-performance:
 	cp $(ROOT_DIR)/configurations/$(CONFIGURATION)/kbench.yaml $(ROOT_DIR)/run/shared/

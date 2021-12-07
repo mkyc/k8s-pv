@@ -251,7 +251,7 @@ sub-apply2:
 		-c "ansible-playbook -i /shared/build/$(CLUSTER_NAME)/inventory /shared/build/$(CLUSTER_NAME)/modify-kubelet.yml"
 
 sub-persistence:
-	cp $(ROOT_DIR)/configurations/epi-1-2-rook-1-7-D2s-10G/rook-*.yaml $(ROOT_DIR)/run/shared/
+	cp $(ROOT_DIR)/configurations/$(CONFIGURATION)/rook-*.yaml $(ROOT_DIR)/run/shared/
 	docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \
@@ -289,7 +289,7 @@ sub-persistence:
 		-t bitnami/kubectl:1.17.9 apply -f /shared/rook-test-app.yaml --insecure-skip-tls-verify
 
 sub-performance:
-	cp $(ROOT_DIR)/configurations/epi-1-2-rook-1-7-D2s-10G/kbench.yaml $(ROOT_DIR)/run/shared/
+	cp $(ROOT_DIR)/configurations/$(CONFIGURATION)/kbench.yaml $(ROOT_DIR)/run/shared/
 	-docker run --rm \
 		-e KUBECONFIG=/shared/kubeconf \
 		-v $(ROOT_DIR)/run/shared:/shared \

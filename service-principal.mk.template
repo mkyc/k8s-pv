@@ -1,6 +1,0 @@
-ARM_CLIENT_ID=<app id from principal>
-ARM_CLIENT_SECRET=<principal secret>
-ARM_SUBSCRIPTION_ID=<azure subscription id>
-ARM_TENANT_ID=<azure tenant id>
-DISPLAY_NAME=<principal name>
-NAME=<principal id>
