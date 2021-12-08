@@ -382,6 +382,29 @@ sub-performance:
 		-w /shared \
 		-t bitnami/kubectl:1.17.9 apply -f /shared/kbench.yaml --insecure-skip-tls-verify
 
+sub-performance-local:
+	cp $(ROOT_DIR)/configurations/$(CONFIGURATION)/kbench-local.yaml $(ROOT_DIR)/run/shared/
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete job kbench-local --insecure-skip-tls-verify
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete pvc kbench-local-pvc --insecure-skip-tls-verify
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete pv local-pv-volume --insecure-skip-tls-verify
+	docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 apply -f /shared/kbench-local.yaml --insecure-skip-tls-verify
+
 sub-nuke:
 	docker run --rm \
 		-e ARM_CLIENT_ID="${ARM_CLIENT_ID}" \
