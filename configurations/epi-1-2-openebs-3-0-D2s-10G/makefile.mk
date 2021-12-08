@@ -181,6 +181,7 @@ resource "azurerm_managed_disk" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-
   create_option        = "Empty"
   disk_size_gb         = ${ADDITIONAL_DISK_SIZE}
 }
+
 resource "azurerm_virtual_machine_data_disk_attachment" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-attachment-a" {
   managed_disk_id    = azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-a.id
   virtual_machine_id = azurerm_virtual_machine.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2.id
@@ -203,7 +204,7 @@ export DATA_DISKS
 
 define ADD_ISCSI
 ---
-- name: Update kubelet
+- name: Enable iSCSI
   hosts: kubernetes_node
   become: true
   become_method: sudo
@@ -239,7 +240,7 @@ export ADD_ISCSI
 
 define ADD_RAW
 ---
-- name: Update kubelet
+- name: Mount additional disk
   hosts: kubernetes_node
   become: true
   become_method: sudo

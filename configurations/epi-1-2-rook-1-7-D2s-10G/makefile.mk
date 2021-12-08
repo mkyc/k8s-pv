@@ -181,6 +181,7 @@ resource "azurerm_managed_disk" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-
   create_option        = "Empty"
   disk_size_gb         = ${ADDITIONAL_DISK_SIZE}
 }
+
 resource "azurerm_virtual_machine_data_disk_attachment" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-attachment-a" {
   managed_disk_id    = azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-a.id
   virtual_machine_id = azurerm_virtual_machine.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2.id
@@ -226,7 +227,7 @@ export FIX_KUBELET
 
 define ADD_RAW
 ---
-- name: Update kubelet
+- name: Mount additional disk
   hosts: kubernetes_node
   become: true
   become_method: sudo
@@ -249,7 +250,7 @@ export ADD_RAW
 sub-init:
 	mkdir -p $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/terraform
 	echo "$$SP_BODY" > $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/terraform/sp.yml
-	ssh-keygen -t rsa -b 4096 -f $(ROOT_DIR)/run/shared/azure_rsa -N ''
+	ssh-keygen -t rsa -b 4096 -f $(ROOT_DIR)/run/shared/azure_rsa -N '' <<<y 2>&1 >/dev/null
 	echo "$$CLUSTER_CONFIG" > $(ROOT_DIR)/run/shared/$(CLUSTER_NAME).yml
 
 sub-apply1:
