@@ -224,6 +224,28 @@ define FIX_KUBELET
 endef
 export FIX_KUBELET
 
+define ADD_RAW
+---
+- name: Update kubelet
+  hosts: kubernetes_node
+  become: true
+  become_method: sudo
+
+  tasks:
+    - name: Create a ext4 filesystem on /dev/sdd and check disk blocks
+      community.general.filesystem:
+        fstype: ext4
+        dev: /dev/sdd
+    - name: Mount up device
+      ansible.posix.mount:
+        path: /mnt/raw
+        src: /dev/sdd
+        fstype: ext4
+        state: mounted
+
+endef
+export ADD_RAW
+
 sub-init:
 	mkdir -p $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/terraform
 	echo "$$SP_BODY" > $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/terraform/sp.yml
@@ -290,6 +312,10 @@ sub-apply2:
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-it epiphanyplatform/epicli:1.2.0 \
 		-c "ansible-playbook -i /shared/build/$(CLUSTER_NAME)/inventory /shared/build/$(CLUSTER_NAME)/modify-kubelet.yml"
+	docker run --rm \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-it epiphanyplatform/epicli:1.2.0 \
+		-c "ansible-playbook -i /shared/build/$(CLUSTER_NAME)/inventory /shared/build/$(CLUSTER_NAME)/add-raw.yml"
 
 sub-persistence:
 	cp $(ROOT_DIR)/configurations/$(CONFIGURATION)/rook-*.yaml $(ROOT_DIR)/run/shared/
