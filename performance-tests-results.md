@@ -423,6 +423,138 @@ Latency in ns (Read/Write)
   CPU Idleness:                      80%
 ```
 
+### run 3
+
+#### jiva
+
+```
+TEST_FILE: /volume/test
+TEST_OUTPUT_PREFIX: test_device
+TEST_SIZE: 2G
+Benchmarking iops.fio into test_device-iops.json
+Benchmarking bandwidth.fio into test_device-bandwidth.json
+Benchmarking latency.fio into test_device-latency.json
+
+=====================
+FIO Benchmark Summary
+For: test_device
+SIZE: 2G
+QUICK MODE: DISABLED
+=====================
+IOPS (Read/Write)
+        Random:                282 / 259
+    Sequential:                548 / 491
+  CPU Idleness:                      74%
+
+Bandwidth in KiB/sec (Read/Write)
+        Random:          22,476 / 19,586
+    Sequential:          33,210 / 23,639
+  CPU Idleness:                      67%
+
+Latency in ns (Read/Write)
+        Random:   7,715,235 / 11,550,736
+    Sequential:   7,599,625 / 11,428,751
+  CPU Idleness:                      70%
+```
+
+#### local
+
+```
+TEST_FILE: /volume/test
+TEST_OUTPUT_PREFIX: test_device
+TEST_SIZE: 2G
+Benchmarking iops.fio into test_device-iops.json
+Benchmarking bandwidth.fio into test_device-bandwidth.json
+Benchmarking latency.fio into test_device-latency.json
+
+=====================
+FIO Benchmark Summary
+For: test_device
+SIZE: 2G
+QUICK MODE: DISABLED
+=====================
+IOPS (Read/Write)
+        Random:            4,077 / 4,083
+    Sequential:            4,079 / 4,064
+  CPU Idleness:                      88%
+
+Bandwidth in KiB/sec (Read/Write)
+        Random:        198,910 / 197,744
+    Sequential:        198,957 / 199,859
+  CPU Idleness:                      84%
+
+Latency in ns (Read/Write)
+        Random:        985,205 / 991,146
+    Sequential:        989,599 / 980,328
+  CPU Idleness:                      86%
+```
+
+### run 4
+
+#### jiva
+
+```
+TEST_FILE: /volume/test
+TEST_OUTPUT_PREFIX: test_device
+TEST_SIZE: 2G
+Benchmarking iops.fio into test_device-iops.json
+Benchmarking bandwidth.fio into test_device-bandwidth.json
+Benchmarking latency.fio into test_device-latency.json
+
+=====================
+FIO Benchmark Summary
+For: test_device
+SIZE: 2G
+QUICK MODE: DISABLED
+=====================
+IOPS (Read/Write)
+        Random:                985 / 578
+    Sequential:            1,779 / 1,005
+  CPU Idleness:                      76%
+
+Bandwidth in KiB/sec (Read/Write)
+        Random:          47,096 / 33,803
+    Sequential:          66,398 / 41,837
+  CPU Idleness:                      74%
+
+Latency in ns (Read/Write)
+        Random:    4,309,644 / 7,420,274
+    Sequential:    4,169,770 / 7,252,073
+  CPU Idleness:                      76%
+```
+
+#### local
+
+```
+TEST_FILE: /volume/test
+TEST_OUTPUT_PREFIX: test_device
+TEST_SIZE: 2G
+Benchmarking iops.fio into test_device-iops.json
+Benchmarking bandwidth.fio into test_device-bandwidth.json
+Benchmarking latency.fio into test_device-latency.json
+
+=====================
+FIO Benchmark Summary
+For: test_device
+SIZE: 2G
+QUICK MODE: DISABLED
+=====================
+IOPS (Read/Write)
+        Random:            4,082 / 3,927
+    Sequential:            4,041 / 4,054
+  CPU Idleness:                      83%
+
+Bandwidth in KiB/sec (Read/Write)
+        Random:        199,432 / 199,635
+    Sequential:        199,127 / 199,089
+  CPU Idleness:                      85%
+
+Latency in ns (Read/Write)
+        Random:        980,206 / 980,906
+    Sequential:        983,644 / 985,772
+  CPU Idleness:                      85%
+```
+
 ## Cluster of 3 Standard_D8s_v3 machines having 520G data disks
 
 ### run 1
