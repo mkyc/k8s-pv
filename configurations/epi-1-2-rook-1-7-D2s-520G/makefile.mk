@@ -181,6 +181,7 @@ resource "azurerm_managed_disk" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-
   create_option        = "Empty"
   disk_size_gb         = ${ADDITIONAL_DISK_SIZE}
 }
+
 resource "azurerm_virtual_machine_data_disk_attachment" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-attachment-a" {
   managed_disk_id    = azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-a.id
   virtual_machine_id = azurerm_virtual_machine.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2.id
@@ -226,7 +227,7 @@ export FIX_KUBELET
 
 define ADD_RAW
 ---
-- name: Update kubelet
+- name: Mount additional disk
   hosts: kubernetes_node
   become: true
   become_method: sudo
@@ -249,7 +250,7 @@ export ADD_RAW
 sub-init:
 	mkdir -p $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/terraform
 	echo "$$SP_BODY" > $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/terraform/sp.yml
-	ssh-keygen -t rsa -b 4096 -f $(ROOT_DIR)/run/shared/azure_rsa -N ''
+	ssh-keygen -t rsa -b 4096 -f $(ROOT_DIR)/run/shared/azure_rsa -N '' <<<y 2>&1 >/dev/null
 	echo "$$CLUSTER_CONFIG" > $(ROOT_DIR)/run/shared/$(CLUSTER_NAME).yml
 
 sub-apply1:
@@ -312,6 +313,7 @@ sub-apply2:
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-it epiphanyplatform/epicli:1.2.0 \
 		-c "ansible-playbook -i /shared/build/$(CLUSTER_NAME)/inventory /shared/build/$(CLUSTER_NAME)/modify-kubelet.yml"
+	echo "$$ADD_RAW" > $(ROOT_DIR)/run/shared/build/$(CLUSTER_NAME)/add-raw.yml
 	docker run --rm \
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-it epiphanyplatform/epicli:1.2.0 \
@@ -372,6 +374,29 @@ sub-performance:
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
 		-t bitnami/kubectl:1.17.9 apply -f /shared/kbench.yaml --insecure-skip-tls-verify
+
+sub-performance-local:
+	cp $(ROOT_DIR)/configurations/$(CONFIGURATION)/kbench-local.yaml $(ROOT_DIR)/run/shared/
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete job kbench-local --insecure-skip-tls-verify
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete pvc kbench-local-pvc --insecure-skip-tls-verify
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete pv local-pv-volume --insecure-skip-tls-verify
+	docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 apply -f /shared/kbench-local.yaml --insecure-skip-tls-verify
 
 sub-nuke:
 	docker run --rm \

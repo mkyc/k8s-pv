@@ -13,6 +13,7 @@ apply2: sub-apply2
 persistence: sub-persistence
 # wait some time to cluster to stabilize before running tests (at least 10 minutes, but longer is better)
 performance: sub-performance
+local-performance: sub-performance-local
 # collect results with `kubectl logs -l kbench=fio -f`
 
 # run following to remove previously created cluster

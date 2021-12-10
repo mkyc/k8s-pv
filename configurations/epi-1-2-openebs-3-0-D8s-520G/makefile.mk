@@ -181,6 +181,7 @@ resource "azurerm_managed_disk" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-
   create_option        = "Empty"
   disk_size_gb         = ${ADDITIONAL_DISK_SIZE}
 }
+
 resource "azurerm_virtual_machine_data_disk_attachment" "$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-attachment-a" {
   managed_disk_id    = azurerm_managed_disk.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2-data-disk-a.id
   virtual_machine_id = azurerm_virtual_machine.$(PREFIX)-$(CLUSTER_NAME)-kubernetes-node-vm-2.id
@@ -203,7 +204,7 @@ export DATA_DISKS
 
 define ADD_ISCSI
 ---
-- name: Update kubelet
+- name: Enable iSCSI
   hosts: kubernetes_node
   become: true
   become_method: sudo
@@ -239,7 +240,7 @@ export ADD_ISCSI
 
 define ADD_RAW
 ---
-- name: Update kubelet
+- name: Mount additional disk
   hosts: kubernetes_node
   become: true
   become_method: sudo
@@ -380,6 +381,29 @@ sub-performance:
 		-v $(ROOT_DIR)/run/shared:/shared \
 		-w /shared \
 		-t bitnami/kubectl:1.17.9 apply -f /shared/kbench.yaml --insecure-skip-tls-verify
+
+sub-performance-local:
+	cp $(ROOT_DIR)/configurations/$(CONFIGURATION)/kbench-local.yaml $(ROOT_DIR)/run/shared/
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete job kbench-local --insecure-skip-tls-verify
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete pvc kbench-local-pvc --insecure-skip-tls-verify
+	-docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 delete pv local-pv-volume --insecure-skip-tls-verify
+	docker run --rm \
+		-e KUBECONFIG=/shared/kubeconf \
+		-v $(ROOT_DIR)/run/shared:/shared \
+		-w /shared \
+		-t bitnami/kubectl:1.17.9 apply -f /shared/kbench-local.yaml --insecure-skip-tls-verify
 
 sub-nuke:
 	docker run --rm \
